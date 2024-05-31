@@ -36,7 +36,7 @@ except Exception:
     machine.reset()
 
 # Watchdog-Timer aktivieren
-machine.watchdog_on(180)
+machine.watchdog_on(120)
 print("Watchdog ON\r\n")
 
 def main():
