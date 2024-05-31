@@ -48,7 +48,7 @@ def main():
 
     # Install Senko from PyPi
     try:
-        import robust
+        import senko
     except ImportError:
         upip.install("micropython-senko")
         import senko
@@ -61,4 +61,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
