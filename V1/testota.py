@@ -5,6 +5,12 @@ import machine
 import network
 import upip
 
+# MQTT-Topics
+# MQTT-Topics
+topics = {
+    "answer": "0_userdata/0/SB/Antwort"
+}
+
 print("Boot start")
 time.sleep(1)
 print("10")
