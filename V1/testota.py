@@ -43,7 +43,7 @@ print("Watchdog ON\r\n")
 
 # Check for OTA updates
 import senko
-OTA = senko.Senko(user="AntiHeld889", repo="schneebox", files=["main.py"])
+OTA = senko.Senko(user="RangerDigital", repo="senko", working_dir="examples", files=["main.py"])
 
 if OTA.update():
     print("Updated to the latest version! Rebooting...")
@@ -54,5 +54,3 @@ if OTA.update():
 #upip.install("micropython-urequests")
 
 print("Ende\r\n")
-
-
