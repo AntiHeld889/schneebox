@@ -1,8 +1,9 @@
 import cellular
-import machine
-import socket
+import gc
 import time
-import json
+import machine
+import network
+import upip
 
 print("Boot start")
 time.sleep(1)
@@ -41,19 +42,23 @@ except Exception:
 machine.watchdog_on(180)
 print("Watchdog ON\r\n")
 
-# Check for OTA updates
-import senko
-OTA = senko.Senko(user="AntiHeld889", repo="schneebox", working_dir="V1", files=["main.py", "testota.py"])
 
-if OTA.update():
-    print("Updated to the latest version! Rebooting...")
-    machine.reset()
 
-# Import mqtt (download client if necessary)
-#import upip
-#upip.install("micropython-urequests")
+def main():
 
-print("Ende\r\n")
+    # Install Senko from PyPi
+    try:
+        import robust
+    except ImportError:
+        upip.install("micropython-senko")
+        import senko
+
+    OTA = senko.Senko(user="AntiHeld889", repo="schneebox", working_dir="V1", files=["main.py", "testota.py"])
+
+    if OTA.update():
+        print("Updated to the latest version! Rebooting...")
+        machine.reset()
 
 if __name__ == "__main__":
     main()
+
