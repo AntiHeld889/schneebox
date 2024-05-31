@@ -5,13 +5,8 @@ import time
 import json
 
 """Your main code goes here!"""
-machine.watchdog_reset()
-print("Watchdog reset\r\n")
 
-machine.watchdog_on(180)
-print("Watchdog ON\r\n")
-
-print("V5")
+print("V6")
 time.sleep(10)
 print('GPRS-Status:', cellular.gprs())
 time.sleep(4)
