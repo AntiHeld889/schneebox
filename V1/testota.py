@@ -27,18 +27,17 @@ print("2")
 time.sleep(1)
 print("1")
 
-def initialize_system()
-    try:
-        print("Trying to connect\r\n")
-        cellular.gprs("pepper", "", "")
-        print("Connected to gprs...\r\n")
-    except Exception:
-        print("Couldn't connect to gprs...\r\n")
-        machine.reset()
+try:
+    print("Trying to connect\r\n")
+    cellular.gprs("pepper", "", "")
+    print("Connected to gprs...\r\n")
+except Exception:
+    print("Couldn't connect to gprs...\r\n")
+    machine.reset()
 
-    # Watchdog-Timer aktivieren
-    machine.watchdog_on(180)
-    print("Watchdog ON\r\n")
+# Watchdog-Timer aktivieren
+machine.watchdog_on(180)
+print("Watchdog ON\r\n")
 
 
 
@@ -56,5 +55,6 @@ def OTA():
         print("Updated to the latest version! Rebooting...")
         machine.reset()
 
-initialize_system()
 OTA()
+
+
