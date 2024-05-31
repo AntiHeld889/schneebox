@@ -1,8 +1,12 @@
 import cellular
 import machine
+import socket
+import time
+import json
+
 """Your main code goes here!"""
 
-print("V4")
+print("V5")
 print('GPRS-Status:', cellular.gprs())
 
 try:
@@ -12,5 +16,6 @@ try:
       cellular.gprs("pepper", "", "")
       print("Connected to gprs...\r\n")
     except Exception as e:
-    print("Couldn't connect to gprs:", e)
-    machine.reset()
+        print("Couldn't connect to gprs:", e)
+        machine.reset()
+
