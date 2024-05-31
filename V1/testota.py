@@ -41,7 +41,7 @@ print("Watchdog ON\r\n")
 
 
 
-def OTA():
+def main():
     # Install Senko from PyPi
     try:
         import senko
@@ -55,6 +55,5 @@ def OTA():
         print("Updated to the latest version! Rebooting...")
         machine.reset()
 
-OTA()
-
-
+if __name__ == "__main__":
+    main()
