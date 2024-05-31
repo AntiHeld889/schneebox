@@ -39,8 +39,6 @@ except Exception:
 machine.watchdog_on(180)
 print("Watchdog ON\r\n")
 
-
-
 def main():
     # Install Senko from PyPi
     try:
