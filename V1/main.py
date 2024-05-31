@@ -5,8 +5,13 @@ import time
 import json
 
 """Your main code goes here!"""
+machine.watchdog_reset()
+print("Watchdog reset\r\n")
 
-print("V4")
+machine.watchdog_on(180)
+print("Watchdog ON\r\n")
+
+print("V5")
 print('GPRS-Status:', cellular.gprs())
 time.sleep(4)
 
@@ -17,5 +22,3 @@ try:
 except Exception as e:
     print("Couldn't connect to gprs:", e)
     machine.reset()
-
-
