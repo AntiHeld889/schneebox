@@ -43,7 +43,7 @@ print("Watchdog ON\r\n")
 
 # Check for OTA updates
 import senko
-OTA = senko.Senko(user="AntiHeld889", repo="schneebox", working_dir="V1", files=["main.py"])
+OTA = senko.Senko(user="AntiHeld889", repo="schneebox", working_dir="V1", files=["main.py", "testota.py"])
 
 if OTA.update():
     print("Updated to the latest version! Rebooting...")
