@@ -6,11 +6,8 @@ import json
 
 """Your main code goes here!"""
 
-print("V6")
+print("V7")
 time.sleep(10)
-print('GPRS-Status:', cellular.gprs())
-time.sleep(4)
-
 try:
     print("Trying to connect\r\n")
     cellular.gprs("pepper", "", "")
