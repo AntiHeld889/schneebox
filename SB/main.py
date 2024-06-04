@@ -103,12 +103,9 @@ def mqtt_callback(topic, msg):
             update()
 
 def update()
-    publish_data(client, topics["answer"], "Update wird gestartet")
     time.sleep(1)
     OTA = senko.Senko(user="AntiHeld889", repo="schneebox",branch="master", working_dir="SB", files=["main.py"])
-    
     if OTA.update():
-    publish_data(client, topics["answer"], "Update durchgeführt! Nestart...")
     print("Updated to the latest version! Rebooting...")
     machine.reset()
     
