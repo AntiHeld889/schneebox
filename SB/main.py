@@ -104,7 +104,7 @@ def mqtt_callback(topic, msg):
 
 def update():
     time.sleep(0.5)
-    OTA = senko.Senko(user="AntiHeld889", repo="schneebox",branch="master", working_dir="SB", files=["main.py"])
+    OTA = senko.Senko(user="AntiHeld889", repo="schneebox", working_dir="SB", files=["main.py"])
     
     if OTA.update():
         print("Updated to the latest version! Rebooting...")
