@@ -7,7 +7,7 @@ import time
 import json
 import senko
 
-version_state = "V1.0"
+version_state = "V2.0"
 
 # Initialisierung der Pins
 led = machine.Pin(27, machine.Pin.OUT, 0)
