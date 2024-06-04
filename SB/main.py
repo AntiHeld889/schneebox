@@ -1,11 +1,11 @@
 import cellular
+import gc
 import machine
 from env import mqtt_name, mqtt_server, mqtt_port, mqtt_username, mqtt_password
 from umqtt import robust
 import socket
 import time
 import json
-import senko
 
 version_state = "V2.0"
 
@@ -103,6 +103,9 @@ def mqtt_callback(topic, msg):
             update()
 
 def update():
+    import senko
+    gc.collect()
+    gc.enable()
     time.sleep(0.5)
     OTA = senko.Senko(user="AntiHeld889", repo="schneebox", working_dir="SB", files=["main.py"])
     
