@@ -1,5 +1,4 @@
 import cellular
-import gc
 import machine
 from env import mqtt_name, mqtt_server, mqtt_port, mqtt_username, mqtt_password
 from umqtt import robust
@@ -103,14 +102,18 @@ def mqtt_callback(topic, msg):
             update()
 
 def update():
+    import gc
     import senko
     gc.collect()
     gc.enable()
-    time.sleep(0.5)
+    time.sleep(0.2)
+    publish_data(client, topics["answer"], "Update gestartet...")
     OTA = senko.Senko(user="AntiHeld889", repo="schneebox", working_dir="SB", files=["main.py"])
     
     if OTA.update():
         print("Updated to the latest version! Rebooting...")
+        publish_data(client, topics["answer"], "Update durchgeführt! Neustart...")
+        time.sleep(0.2)
         machine.reset()
     
 def handle_relais_state(primary_relais, secondary_relais, state):
