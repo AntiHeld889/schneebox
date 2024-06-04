@@ -7,7 +7,7 @@ import time
 import json
 import senko
 
-version_state = "V2.0"
+version_state = "V1.0"
 
 # Initialisierung der Pins
 led = machine.Pin(27, machine.Pin.OUT, 0)
@@ -22,7 +22,6 @@ Box2 = machine.Pin(16, machine.Pin.IN)
 counter = 0
 TIME_PERIOD = 10
 LINEAR_MOTOR_OPERATION_TIME = 19  # Sekunden
-OTA = senko.Senko(user="AntiHeld889", repo="schneebox",branch="master", working_dir="SB", files=["main.py"])
 
 # MQTT-Topics
 topics = {
@@ -103,6 +102,7 @@ def mqtt_callback(topic, msg):
         if msg == "true":
             print("Update wird gestartet")
             machine.watchdog_reset()
+            OTA = senko.Senko(user="AntiHeld889", repo="schneebox",branch="master", working_dir="SB", files=["main.py"])
             if OTA.update():
                 publish_data(client, topics["answer"], "Update durchgeführt! Nestart...")
                 print("Updated to the latest version! Rebooting...")
