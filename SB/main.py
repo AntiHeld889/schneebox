@@ -7,7 +7,7 @@ import time
 import json
 import senko
 
-version_state = "V1.0"
+version_state = "V2.0"
 
 # Initialisierung der Pins
 led = machine.Pin(27, machine.Pin.OUT, 0)
@@ -100,13 +100,18 @@ def mqtt_callback(topic, msg):
             machine.reset()
     elif topic == topics["update"]:
         if msg == "true":
-            print("Update wird gestartet")
-            machine.watchdog_reset()
-            OTA = senko.Senko(user="AntiHeld889", repo="schneebox",branch="master", working_dir="SB", files=["main.py"])
-            if OTA.update():
-                publish_data(client, topics["answer"], "Update durchgeführt! Nestart...")
-                print("Updated to the latest version! Rebooting...")
-                machine.reset()
+            update()
+
+def update()
+    publish_data(client, topics["answer"], "Update wird gestartet")
+    time.sleep(1)
+    OTA = senko.Senko(user="AntiHeld889", repo="schneebox",branch="master", working_dir="SB", files=["main.py"])
+    
+    if OTA.update():
+    publish_data(client, topics["answer"], "Update durchgeführt! Nestart...")
+    print("Updated to the latest version! Rebooting...")
+    machine.reset()
+    
 
 def handle_relais_state(primary_relais, secondary_relais, state):
     if state == "false":
