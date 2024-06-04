@@ -114,7 +114,7 @@ def update():
         print("Updated to the latest version! Rebooting...")
         time.sleep(0.2)
         publish_data(client, topics["answer"], "Update durchgeführt! Neustart...")
-        time.sleep(0.2)
+        time.sleep(1)
         machine.reset()
     
 def handle_relais_state(primary_relais, secondary_relais, state):
