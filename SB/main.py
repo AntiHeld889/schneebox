@@ -102,14 +102,13 @@ def mqtt_callback(topic, msg):
         if msg == "true":
             update()
 
-def update()
-    time.sleep(1)
+def update():
+    time.sleep(0.5)
     OTA = senko.Senko(user="AntiHeld889", repo="schneebox",branch="master", working_dir="SB", files=["main.py"])
     if OTA.update():
-    print("Updated to the latest version! Rebooting...")
-    machine.reset()
+        print("Updated to the latest version! Rebooting...")
+        machine.reset()
     
-
 def handle_relais_state(primary_relais, secondary_relais, state):
     if state == "false":
         primary_relais.value(0)
