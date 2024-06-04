@@ -112,6 +112,7 @@ def update():
     
     if OTA.update():
         print("Updated to the latest version! Rebooting...")
+        time.sleep(0.2)
         publish_data(client, topics["answer"], "Update durchgeführt! Neustart...")
         time.sleep(0.2)
         machine.reset()
@@ -208,3 +209,4 @@ if __name__ == "__main__":
                 check_gprs()
                 time.sleep(1)
         increment_counter()
+
