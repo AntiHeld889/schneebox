@@ -38,6 +38,7 @@ topics = {
     "signal": "0_userdata/0/SB/Signal",
     "version": "0_userdata/0/SB/Version",
     "update": "0_userdata/0/SB/Update",
+    "lmopt": "0_userdata/0/SB/LMOPT",
     "reset": "0_userdata/0/SB/Reset"
 }
 
@@ -46,7 +47,7 @@ def initialize_system():
     print("Version: ", version_state)
     print("Boot start")
     led.value(1)
-    time.sleep(5)
+    time.sleep(8)
     try:
         print("Trying to connect to GPRS...")
         cellular.gprs("pepper", "", "")
@@ -56,15 +57,14 @@ def initialize_system():
         machine.reset()
     time.sleep(1)
     print("IP:", socket.get_local_ip())
-    quality = cellular.get_signal_quality()
-    print("Signal quality: {} -> {}%".format(quality[0], quality[0] * 100 / 31))
+    quality = round(cellular.get_signal_quality()[0] * 100 / 31)
+    print("Signal quality: {}%".format(quality))
     machine.watchdog_on(180)
     print("Watchdog ON")
     print("Boot end")
     led.value(0)
 
 def configure_mqtt_client():
-    #client = robust.MQTTClient("SB", "r3dfp.de", 1883, "admin", "Schneewitte-99")
     client = robust.MQTTClient(mqtt_name, mqtt_server, mqtt_port, mqtt_username, mqtt_password)
     client.connect()
     client.set_callback(mqtt_callback)
@@ -74,6 +74,7 @@ def configure_mqtt_client():
     return client
 
 def mqtt_callback(topic, msg):
+    global lmop_time
     print('Received Data:  Topic = {}, Msg = {}'.format(topic, msg))
     topic = topic.decode('utf-8')
     msg = msg.decode('utf-8')
@@ -94,12 +95,22 @@ def mqtt_callback(topic, msg):
             box2_start()
     elif topic == topics["reset"]:
         if msg == "true":
-            print("Neustart in 3 Sekunden")
-            time.sleep(3)
-            machine.reset()
+            reset()
     elif topic == topics["update"]:
         if msg == "true":
             update()
+    elif topic == topics["lmopt"]:
+        try:
+            lmop_time = int(msg)
+            print('Neues Blinkintervall erhalten: {} Sekunden'.format(lmop_time))
+        except ValueError:
+            print('Ungültige Nachricht: {}'.format(lmop_time))
+
+
+def reset():
+    publish_data(client, topics["answer"], "Reset Befehl erhalten")
+    time.sleep(1)
+    machine.reset()
 
 def update():
     import gc
@@ -114,7 +125,7 @@ def update():
         print("Updated to the latest version! Rebooting...")
         time.sleep(0.2)
         publish_data(client, topics["answer"], "Update durchgeführt! Neustart...")
-        time.sleep(1)
+        time.sleep(0.2)
         machine.reset()
     
 def handle_relais_state(primary_relais, secondary_relais, state):
@@ -146,7 +157,6 @@ def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_
     publish_data(client, box_topic,not box_state)
     time.sleep(LINEAR_MOTOR_OPERATION_TIME)
     publish_data(client, topics["answer"], startb_msg)
-    machine.watchdog_reset()
     box_state = Box1.value() == 1 if box_topic == topics["Box1"] else Box2.value() == 1
     publish_data(client, box_topic,not box_state)
     time.sleep(0.2)
@@ -156,7 +166,6 @@ def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_
     secondary_relais.value(1)
     time.sleep(16)
     time.sleep(LINEAR_MOTOR_OPERATION_TIME)
-    machine.watchdog_reset()
     secondary_relais.value(0)
     publish_data(client, topics["answer"], endb_msg)
 
@@ -173,7 +182,7 @@ def publish_box_states():
     publish_data(client, topics["Box1"],not box1_state)
     publish_data(client, topics["Box2"],not box2_state)
     publish_data(client, topics["IP"], socket.get_local_ip())
-    signal_quality = cellular.get_signal_quality()[0]
+    signal_quality = round(cellular.get_signal_quality()[0] * 100 / 31)
     publish_data(client, topics["signal"], signal_quality)
 
 def reset_mqtt():
@@ -209,4 +218,3 @@ if __name__ == "__main__":
                 check_gprs()
                 time.sleep(1)
         increment_counter()
-
