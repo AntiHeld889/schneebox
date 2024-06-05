@@ -137,6 +137,7 @@ def handle_relais_state(primary_relais, secondary_relais, state):
         primary_relais.value(1)
 
 def publish_data(client, topic, data):
+    machine.watchdog_reset()
     msg = json.dumps(data)
     print('Seceived Data:  Topic = {}, Msg = {}'.format(topic, msg))
     client.publish(topic, msg)
@@ -148,6 +149,9 @@ def box2_start():
     control_box(relais3, relais4, topics["Box2"], "Linearmotor Box 2 wird ausgefahren", "Linearmotor Box 2 fertig ausgefahren", "Linearmotor Box 2 wird eingefahren", "Linearmotor Box 2 fertig eingefahren")
 
 def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_msg, enda_msg, endb_msg):
+    global B_state
+    B_state = False
+    machine.watchdog_reset()
     secondary_relais.value(0)
     publish_data(client, topics["answer"], starta_msg)
     time.sleep(0.5)
@@ -168,6 +172,7 @@ def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_
     time.sleep(LINEAR_MOTOR_OPERATION_TIME)
     secondary_relais.value(0)
     publish_data(client, topics["answer"], endb_msg)
+    machine.watchdog_reset()
 
 def increment_counter():
     global counter
@@ -182,6 +187,7 @@ def publish_box_states():
     publish_data(client, topics["Box1"],not box1_state)
     publish_data(client, topics["Box2"],not box2_state)
     publish_data(client, topics["IP"], socket.get_local_ip())
+    publish_data(client, topics["version"], version_state)
     signal_quality = round(cellular.get_signal_quality()[0] * 100 / 31)
     publish_data(client, topics["signal"], signal_quality)
 
@@ -203,7 +209,6 @@ def check_gprs():
         else:
             print("Already connected...")
             client.check_msg()
-            machine.watchdog_reset()
     except Exception as err:
         print("GPRS check error:", str(err))
 
@@ -218,3 +223,4 @@ if __name__ == "__main__":
                 check_gprs()
                 time.sleep(1)
         increment_counter()
+
