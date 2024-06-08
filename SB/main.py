@@ -6,7 +6,7 @@ import socket
 import time
 import json
 
-version_state = "V2.1"
+version_state = "V2.2"
 
 # Initialisierung der Pins
 led = machine.Pin(27, machine.Pin.OUT, 0)
@@ -184,13 +184,28 @@ def publish_box_states():
     box1_state = Box1.value() == 1
     box2_state = Box2.value() == 1
     signal_quality = round(cellular.get_signal_quality()[0] * 100 / 31)
-    publish_data(client, topics["data"], counter)
-    publish_data(client, topics["Bat"], U)
-    publish_data(client, topics["Box1"],not box1_state)
-    publish_data(client, topics["Box2"],not box2_state)
-    publish_data(client, topics["IP"], socket.get_local_ip())
-    publish_data(client, topics["version"], version_state)
-    publish_data(client, topics["signal"], signal_quality)
+    
+    # Sammle die Daten in einem Dictionary
+    alldata = {
+        "box1_state": not box1_state,
+        "box2_state": not box2_state,
+        "battery": U,
+        "counter": counter,
+        "ip": socket.get_local_ip(),
+        "version": version_state,
+        "signal_quality": signal_quality
+    }
+    
+    # Veröffentliche den JSON-String an das Topic JS
+    publish_data(client, topics["JS"], alldata)
+    
+    #publish_data(client, topics["data"], counter)
+    #publish_data(client, topics["Bat"], U)
+    #publish_data(client, topics["Box1"],not box1_state)
+    #publish_data(client, topics["Box2"],not box2_state)
+    #publish_data(client, topics["IP"], socket.get_local_ip())
+    #publish_data(client, topics["version"], version_state)
+    #publish_data(client, topics["signal"], signal_quality)
 
 def reset_mqtt():
     client.connect()
@@ -224,3 +239,4 @@ if __name__ == "__main__":
                 check_gprs()
                 time.sleep(1)
         publish_box_states()
+
