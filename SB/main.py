@@ -6,7 +6,7 @@ import socket
 import time
 import json
 
-version_state = "V2.0"
+version_state = "V2.1"
 
 # Initialisierung der Pins
 led = machine.Pin(27, machine.Pin.OUT, 0)
@@ -17,10 +17,12 @@ relais4 = machine.Pin(30, machine.Pin.OUT, 0)
 Box1 = machine.Pin(18, machine.Pin.IN)
 Box2 = machine.Pin(16, machine.Pin.IN)
 
-# Initialisierung der Zählvariable
+# Initialisierung Variablen
 counter = 0
 TIME_PERIOD = 10
 LINEAR_MOTOR_OPERATION_TIME = 19  # Sekunden
+WATCHDOG_TIMEOUT = 180
+U = 1.2
 
 # MQTT-Topics
 topics = {
@@ -39,6 +41,8 @@ topics = {
     "version": "0_userdata/0/SB/Version",
     "update": "0_userdata/0/SB/Update",
     "lmopt": "0_userdata/0/SB/LMOPT",
+    "Bat": "0_userdata/0/SB/Battery",
+    "JS": "0_userdata/0/SB/JS",
     "reset": "0_userdata/0/SB/Reset"
 }
 
@@ -59,7 +63,7 @@ def initialize_system():
     print("IP:", socket.get_local_ip())
     quality = round(cellular.get_signal_quality()[0] * 100 / 31)
     print("Signal quality: {}%".format(quality))
-    machine.watchdog_on(180)
+    machine.watchdog_on(WATCHDOG_TIMEOUT)
     print("Watchdog ON")
     print("Boot end")
     led.value(0)
@@ -174,21 +178,18 @@ def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_
     publish_data(client, topics["answer"], endb_msg)
     machine.watchdog_reset()
 
-def increment_counter():
+def publish_box_states():
     global counter
     counter += 1
-    publish_data(client, topics["data"], counter)
-    client.check_msg()
-    publish_box_states()
-
-def publish_box_states():
     box1_state = Box1.value() == 1
     box2_state = Box2.value() == 1
+    signal_quality = round(cellular.get_signal_quality()[0] * 100 / 31)
+    publish_data(client, topics["data"], counter)
+    publish_data(client, topics["Bat"], U)
     publish_data(client, topics["Box1"],not box1_state)
     publish_data(client, topics["Box2"],not box2_state)
     publish_data(client, topics["IP"], socket.get_local_ip())
     publish_data(client, topics["version"], version_state)
-    signal_quality = round(cellular.get_signal_quality()[0] * 100 / 31)
     publish_data(client, topics["signal"], signal_quality)
 
 def reset_mqtt():
@@ -222,5 +223,4 @@ if __name__ == "__main__":
             for _ in range(2):
                 check_gprs()
                 time.sleep(1)
-        increment_counter()
-
+        publish_box_states()
