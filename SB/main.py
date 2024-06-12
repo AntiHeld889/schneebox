@@ -6,10 +6,11 @@ import socket
 import time
 import json
 
-version_state = "V2.2"
+version_state = "V2.3"
 
 # Initialisierung der Pins
 led = machine.Pin(27, machine.Pin.OUT, 0)
+adc = machine.ADC(1)
 relais1 = machine.Pin(29, machine.Pin.OUT, 0)
 relais2 = machine.Pin(26, machine.Pin.OUT, 0)
 relais3 = machine.Pin(25, machine.Pin.OUT, 0)
@@ -54,7 +55,7 @@ def initialize_system():
     time.sleep(8)
     try:
         print("Trying to connect to GPRS...")
-        cellular.gprs("pepper", "", "")
+        cellular.gprs("pepper", "", "") #internet.telekom
         print("Connected to GPRS.")
     except Exception as e:
         print("Couldn't connect to GPRS:", e)
@@ -179,8 +180,13 @@ def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_
     machine.watchdog_reset()
 
 def publish_box_states():
+    battery_value = adc.read()
+    voltage = battery_value #* (3.3 / 65535) * VOLTAGE_DROP_FACTOR
     global counter
     counter += 1
+    if counter >= 6000:
+        print("Counter reached 6000, restarting...")
+        machine.reset()
     box1_state = Box1.value() == 1
     box2_state = Box2.value() == 1
     signal_quality = round(cellular.get_signal_quality()[0] * 100 / 31)
@@ -189,7 +195,7 @@ def publish_box_states():
     alldata = {
         "box1_state": not box1_state,
         "box2_state": not box2_state,
-        "battery": U,
+        "battery": voltage,
         "counter": counter,
         "ip": socket.get_local_ip(),
         "version": version_state,
@@ -199,14 +205,6 @@ def publish_box_states():
     # Veröffentliche den JSON-String an das Topic JS
     publish_data(client, topics["JS"], alldata)
     
-    #publish_data(client, topics["data"], counter)
-    #publish_data(client, topics["Bat"], U)
-    #publish_data(client, topics["Box1"],not box1_state)
-    #publish_data(client, topics["Box2"],not box2_state)
-    #publish_data(client, topics["IP"], socket.get_local_ip())
-    #publish_data(client, topics["version"], version_state)
-    #publish_data(client, topics["signal"], signal_quality)
-
 def reset_mqtt():
     client.connect()
     time.sleep(0.5)
@@ -239,4 +237,5 @@ if __name__ == "__main__":
                 check_gprs()
                 time.sleep(1)
         publish_box_states()
+
 
