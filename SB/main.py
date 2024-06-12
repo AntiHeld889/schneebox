@@ -9,8 +9,9 @@ import json
 version_state = "V2.3"
 
 # Initialisierung der Pins
-led = machine.Pin(27, machine.Pin.OUT, 0)
+
 adc = machine.ADC(1)
+led = machine.Pin(27, machine.Pin.OUT, 0)
 relais1 = machine.Pin(29, machine.Pin.OUT, 0)
 relais2 = machine.Pin(26, machine.Pin.OUT, 0)
 relais3 = machine.Pin(25, machine.Pin.OUT, 0)
@@ -19,11 +20,11 @@ Box1 = machine.Pin(18, machine.Pin.IN)
 Box2 = machine.Pin(16, machine.Pin.IN)
 
 # Initialisierung Variablen
+
 counter = 0
 TIME_PERIOD = 10
 LINEAR_MOTOR_OPERATION_TIME = 19  # Sekunden
 WATCHDOG_TIMEOUT = 180
-U = 1.2
 
 # MQTT-Topics
 topics = {
@@ -237,5 +238,6 @@ if __name__ == "__main__":
                 check_gprs()
                 time.sleep(1)
         publish_box_states()
+
 
 
