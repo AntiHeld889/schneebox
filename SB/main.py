@@ -19,7 +19,7 @@ Box2 = machine.Pin(16, machine.Pin.IN)
 # Initialisierung Variablen
 
 counter = 0
-TIME_PERIOD = 10
+TIME_PERIOD = 5
 LINEAR_MOTOR_OPERATION_TIME = 19  # Sekunden
 WATCHDOG_TIMEOUT = 180
 
@@ -50,6 +50,8 @@ def initialize_system():
     print("Version: ", version_state)
     print("Boot start")
     led.value(1)
+    machine.watchdog_on(WATCHDOG_TIMEOUT)
+    print("Watchdog ON")
     time.sleep(6)
     try:
         print("Trying to connect to GPRS...")
@@ -62,8 +64,7 @@ def initialize_system():
     print("IP:", socket.get_local_ip())
     quality = round(cellular.get_signal_quality()[0] * 100 / 31)
     print("Signal quality: {}%".format(quality))
-    machine.watchdog_on(WATCHDOG_TIMEOUT)
-    print("Watchdog ON")
+    time.sleep(1)
     print("Boot end")
     led.value(0)
 
@@ -213,7 +214,7 @@ def reset_mqtt():
         client.subscribe(topic)
 
 def check_gprs():
-    time.sleep(1)    
+    time.sleep(3)    
     try:
         if not cellular.gprs():
             print('GPRS-Status:', cellular.gprs())
