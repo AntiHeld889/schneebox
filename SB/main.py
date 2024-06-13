@@ -213,7 +213,8 @@ def reset_mqtt():
         client.subscribe(topic)
 
 def check_gprs():
-    try:
+        time.sleep(1)    
+        try:
         if not cellular.gprs():
             print('GPRS-Status:', cellular.gprs())
             time.sleep(5)
@@ -224,7 +225,7 @@ def check_gprs():
             print("Already connected...")
             client.check_msg()
     except Exception as err:
-        print("GPRS check error:", str(err))
+        machine.reset()
 
 # Hauptprogramm
 if __name__ == "__main__":
@@ -236,6 +237,5 @@ if __name__ == "__main__":
         for _ in range(TIME_PERIOD):
             for _ in range(2):
                 check_gprs()
-                time.sleep(1)
         publish_box_states()
 
