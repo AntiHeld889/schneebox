@@ -3,7 +3,7 @@ from env import mqtt_name, mqtt_server, mqtt_port, mqtt_username, mqtt_password
 from umqtt import robust
 
 
-version_state = "V2.3"
+version_state = "V2.3.1"
 
 # Initialisierung der Pins
 
@@ -213,8 +213,8 @@ def reset_mqtt():
         client.subscribe(topic)
 
 def check_gprs():
-        time.sleep(1)    
-        try:
+    time.sleep(1)    
+    try:
         if not cellular.gprs():
             print('GPRS-Status:', cellular.gprs())
             time.sleep(5)
@@ -238,4 +238,5 @@ if __name__ == "__main__":
             for _ in range(2):
                 check_gprs()
         publish_box_states()
+
 
