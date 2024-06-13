@@ -1,10 +1,7 @@
-import cellular
-import machine
+import cellular, machine, socket, time, json
 from env import mqtt_name, mqtt_server, mqtt_port, mqtt_username, mqtt_password
 from umqtt import robust
-import socket
-import time
-import json
+
 
 version_state = "V2.3"
 
@@ -53,7 +50,7 @@ def initialize_system():
     print("Version: ", version_state)
     print("Boot start")
     led.value(1)
-    time.sleep(8)
+    time.sleep(6)
     try:
         print("Trying to connect to GPRS...")
         cellular.gprs("pepper", "", "") #internet.telekom
@@ -131,7 +128,7 @@ def update():
         print("Updated to the latest version! Rebooting...")
         time.sleep(0.2)
         publish_data(client, topics["answer"], "Update durchgeführt! Neustart...")
-        time.sleep(0.2)
+        time.sleep(1)
         machine.reset()
     
 def handle_relais_state(primary_relais, secondary_relais, state):
@@ -187,6 +184,8 @@ def publish_box_states():
     counter += 1
     if counter >= 6000:
         print("Counter reached 6000, restarting...")
+        publish_data(client, topics["answer"], "Counter 6000 Restart...")
+        time.sleep(1)
         machine.reset()
     box1_state = Box1.value() == 1
     box2_state = Box2.value() == 1
@@ -229,6 +228,7 @@ def check_gprs():
 
 # Hauptprogramm
 if __name__ == "__main__":
+    time.sleep(2)
     initialize_system()
     client = configure_mqtt_client()
 
@@ -238,6 +238,4 @@ if __name__ == "__main__":
                 check_gprs()
                 time.sleep(1)
         publish_box_states()
-
-
 
