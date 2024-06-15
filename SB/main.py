@@ -1,13 +1,17 @@
-import cellular, machine, socket, time, json
+import cellular
+import machine
+import socket
+import time
+import json
 from env import mqtt_name, mqtt_server, mqtt_port, mqtt_username, mqtt_password
-from umqtt import robust
+from umqtt import simple
 
 
-version_state = "V2.3.1"
+version_state = "V2.3"
 
 # Initialisierung der Pins
 
-adc = machine.ADC(1)
+#adc = machine.ADC(1)
 led = machine.Pin(27, machine.Pin.OUT, 0)
 relais1 = machine.Pin(29, machine.Pin.OUT, 0)
 relais2 = machine.Pin(26, machine.Pin.OUT, 0)
@@ -19,7 +23,7 @@ Box2 = machine.Pin(16, machine.Pin.IN)
 # Initialisierung Variablen
 
 counter = 0
-TIME_PERIOD = 5
+TIME_PERIOD = 10
 LINEAR_MOTOR_OPERATION_TIME = 19  # Sekunden
 WATCHDOG_TIMEOUT = 180
 
@@ -69,7 +73,7 @@ def initialize_system():
     led.value(0)
 
 def configure_mqtt_client():
-    client = robust.MQTTClient(mqtt_name, mqtt_server, mqtt_port, mqtt_username, mqtt_password)
+    client = simple.MQTTClient(mqtt_name, mqtt_server, mqtt_port, mqtt_username, mqtt_password)
     client.connect()
     client.set_callback(mqtt_callback)
     for topic in topics.values():
@@ -119,6 +123,7 @@ def reset():
 def update():
     import gc
     import senko
+    time.sleep(0.2)
     gc.collect()
     gc.enable()
     time.sleep(0.2)
@@ -129,7 +134,7 @@ def update():
         print("Updated to the latest version! Rebooting...")
         time.sleep(0.2)
         publish_data(client, topics["answer"], "Update durchgeführt! Neustart...")
-        time.sleep(1)
+        time.sleep(0.2)
         machine.reset()
     
 def handle_relais_state(primary_relais, secondary_relais, state):
@@ -179,8 +184,8 @@ def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_
     machine.watchdog_reset()
 
 def publish_box_states():
-    battery_value = adc.read()
-    voltage = battery_value #* (3.3 / 65535) * VOLTAGE_DROP_FACTOR
+    #battery_value = adc.read()
+    #voltage = battery_value #* (3.3 / 65535) * VOLTAGE_DROP_FACTOR
     global counter
     counter += 1
     if counter >= 6000:
@@ -196,7 +201,7 @@ def publish_box_states():
     alldata = {
         "box1_state": not box1_state,
         "box2_state": not box2_state,
-        "battery": voltage,
+        #"battery": voltage,
         "counter": counter,
         "ip": socket.get_local_ip(),
         "version": version_state,
@@ -213,8 +218,7 @@ def reset_mqtt():
     for topic in topics.values():
         client.subscribe(topic)
 
-def check_gprs():
-    time.sleep(3)    
+def check_gprs():    
     try:
         if not cellular.gprs():
             print('GPRS-Status:', cellular.gprs())
@@ -238,6 +242,5 @@ if __name__ == "__main__":
         for _ in range(TIME_PERIOD):
             for _ in range(2):
                 check_gprs()
+                time.sleep(1)
         publish_box_states()
-
-
