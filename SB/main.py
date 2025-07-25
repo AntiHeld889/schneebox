@@ -15,7 +15,7 @@ GPRS_USER = ""       # ggf. wenn nötig
 GPRS_PASS = ""       # ggf. wenn nötig
 
 LINEAR_MOTOR_OPERATION_TIME = 20  # Sekunden
-TIME_PERIOD = 10                  # Für Schleife => 20s in der Hauptschleife
+TIME_PERIOD = 20                  # Für Schleife => 20s in der Hauptschleife
 COUNTER_RESET_VALUE = 8000
 
 # ====== GPIO / Pins ====== #
@@ -144,9 +144,9 @@ def update():
     
     if OTA.update():
         print("Updated to the latest version! Rebooting...")
-        time.sleep(0.2)
+        time.sleep(0.5)
         publish_data(client, topics["answer"], "Update durchgeführt! Neustart...")
-        time.sleep(0.2)
+        time.sleep(0.5)
         machine.reset()
     
 def handle_relais_state(primary_relais, secondary_relais, state):
@@ -246,6 +246,8 @@ if __name__ == "__main__":
 
     while True:
         for _ in range(TIME_PERIOD):
-            print("wait")
-            time.sleep(3)
+            client.check_msg()
+            print("Bereit zum empfangen")
+            time.sleep(1)
         publish_box_states()
+        time.sleep(1)
