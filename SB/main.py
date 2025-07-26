@@ -5,29 +5,32 @@ import time
 import json
 from env import mqtt_name, mqtt_server, mqtt_port, mqtt_username, mqtt_password
 from umqtt import simple
+import gc
 
+# ====== Konfig / Konstanten ====== #
+version_state = "V2.5.1"
+WATCHDOG_TIMEOUT = 90
+GPRS_APN = "pepper"  # APN für cellular.gprs()
+GPRS_USER = ""       # ggf. wenn nötig
+GPRS_PASS = ""       # ggf. wenn nötig
 
-version_state = "V2.3"
+LINEAR_MOTOR_OPERATION_TIME = 20  # Sekunden
+TIME_PERIOD = 20                  # Für Schleife => 20s in der Hauptschleife
+COUNTER_RESET_VALUE = 8000
 
-# Initialisierung der Pins
-
-#adc = machine.ADC(1)
+# ====== GPIO / Pins ====== #
+adc = machine.ADC(1)
 led = machine.Pin(27, machine.Pin.OUT, 0)
+
 relais1 = machine.Pin(29, machine.Pin.OUT, 0)
 relais2 = machine.Pin(26, machine.Pin.OUT, 0)
 relais3 = machine.Pin(25, machine.Pin.OUT, 0)
 relais4 = machine.Pin(30, machine.Pin.OUT, 0)
+
 Box1 = machine.Pin(18, machine.Pin.IN)
 Box2 = machine.Pin(16, machine.Pin.IN)
 
-# Initialisierung Variablen
-
-counter = 0
-TIME_PERIOD = 10
-LINEAR_MOTOR_OPERATION_TIME = 19  # Sekunden
-WATCHDOG_TIMEOUT = 180
-
-# MQTT-Topics
+# ====== MQTT-Themen ====== #
 topics = {
     "IP": "0_userdata/0/SB/IP",
     "B1": "0_userdata/0/SB/B1",
@@ -44,30 +47,39 @@ topics = {
     "version": "0_userdata/0/SB/Version",
     "update": "0_userdata/0/SB/Update",
     "lmopt": "0_userdata/0/SB/LMOPT",
-    "Bat": "0_userdata/0/SB/Battery",
     "JS": "0_userdata/0/SB/JS",
     "reset": "0_userdata/0/SB/Reset"
 }
 
-# Boot-Phase
+# ====== Globale Variablen ====== #
+bat = 0
+counter = 0
+lmop_time = LINEAR_MOTOR_OPERATION_TIME
+
+# ====== Initialisierung ====== #
 def initialize_system():
-    print("Version: ", version_state)
+    print("Version:", version_state)
     print("Boot start")
     led.value(1)
     machine.watchdog_on(WATCHDOG_TIMEOUT)
     print("Watchdog ON")
-    time.sleep(6)
+    time.sleep(2)
+
+    # GPRS-Verbindung
     try:
-        print("Trying to connect to GPRS...")
-        cellular.gprs("pepper", "", "") #internet.telekom
-        print("Connected to GPRS.")
+        print("Verbindungsaufbau GPRS...")
+        cellular.gprs(GPRS_APN, GPRS_USER, GPRS_PASS)
+        print("GPRS verbunden.")
     except Exception as e:
-        print("Couldn't connect to GPRS:", e)
+        print("GPRS Verbindung fehlgeschlagen:", e)
         machine.reset()
+
     time.sleep(1)
-    print("IP:", socket.get_local_ip())
+    ip = socket.get_local_ip()
+    print("IP:", ip)
     quality = round(cellular.get_signal_quality()[0] * 100 / 31)
-    print("Signal quality: {}%".format(quality))
+    print("Signalqualität: {}%".format(quality))
+
     time.sleep(1)
     print("Boot end")
     led.value(0)
@@ -132,9 +144,9 @@ def update():
     
     if OTA.update():
         print("Updated to the latest version! Rebooting...")
-        time.sleep(0.2)
+        time.sleep(0.5)
         publish_data(client, topics["answer"], "Update durchgeführt! Neustart...")
-        time.sleep(0.2)
+        time.sleep(0.5)
         machine.reset()
     
 def handle_relais_state(primary_relais, secondary_relais, state):
@@ -146,16 +158,29 @@ def handle_relais_state(primary_relais, secondary_relais, state):
         primary_relais.value(1)
 
 def publish_data(client, topic, data):
-    machine.watchdog_reset()
-    msg = json.dumps(data)
-    print('Seceived Data:  Topic = {}, Msg = {}'.format(topic, msg))
-    client.publish(topic, msg)
+    try:
+        machine.watchdog_reset()
+        msg = json.dumps(data)
+        print('Seceived Data:  Topic = {}, Msg = {}'.format(topic, msg))
+        client.publish(topic, msg)
+    except Exception as e:
+        print('Fehler beim publish_data:', e)
+        machine.reset()
 
 def box1_start():
     control_box(relais1, relais2, topics["Box1"], "Linearmotor Box 1 wird ausgefahren", "Linearmotor Box 1 fertig ausgefahren", "Linearmotor Box 1 wird eingefahren", "Linearmotor Box 1 fertig eingefahren")
 
 def box2_start():
     control_box(relais3, relais4, topics["Box2"], "Linearmotor Box 2 wird ausgefahren", "Linearmotor Box 2 fertig ausgefahren", "Linearmotor Box 2 wird eingefahren", "Linearmotor Box 2 fertig eingefahren")
+
+def battery():
+    global bat
+    val_sum = 0
+    for _ in range(10):
+        val_sum += adc.read()
+        time.sleep(0.1)
+    bat = val_sum / 10
+    print("Battery ADC:", bat)
 
 def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_msg, enda_msg, endb_msg):
     global B_state
@@ -169,6 +194,7 @@ def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_
     box_state = Box1.value() == 1 if box_topic == topics["Box1"] else Box2.value() == 1
     publish_data(client, box_topic,not box_state)
     time.sleep(LINEAR_MOTOR_OPERATION_TIME)
+    machine.watchdog_reset()
     publish_data(client, topics["answer"], startb_msg)
     box_state = Box1.value() == 1 if box_topic == topics["Box1"] else Box2.value() == 1
     publish_data(client, box_topic,not box_state)
@@ -178,19 +204,20 @@ def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_
     time.sleep(0.5)
     secondary_relais.value(1)
     time.sleep(16)
+    machine.watchdog_reset()
     time.sleep(LINEAR_MOTOR_OPERATION_TIME)
     secondary_relais.value(0)
     publish_data(client, topics["answer"], endb_msg)
-    machine.watchdog_reset()
 
 def publish_box_states():
-    #battery_value = adc.read()
-    #voltage = battery_value #* (3.3 / 65535) * VOLTAGE_DROP_FACTOR
+    battery()
+    time.sleep(0.1)
     global counter
     counter += 1
-    if counter >= 6000:
-        print("Counter reached 6000, restarting...")
-        publish_data(client, topics["answer"], "Counter 6000 Restart...")
+    if counter >= 8000:
+        print("Counter reached 8000, restarting...")
+        time.sleep(1)
+        publish_data(client, topics["answer"], "Counter 8000 Restart...")
         time.sleep(1)
         machine.reset()
     box1_state = Box1.value() == 1
@@ -201,7 +228,7 @@ def publish_box_states():
     alldata = {
         "box1_state": not box1_state,
         "box2_state": not box2_state,
-        #"battery": voltage,
+        "battery": bat,
         "counter": counter,
         "ip": socket.get_local_ip(),
         "version": version_state,
@@ -210,27 +237,6 @@ def publish_box_states():
     
     # Veröffentliche den JSON-String an das Topic JS
     publish_data(client, topics["JS"], alldata)
-    
-def reset_mqtt():
-    client.connect()
-    time.sleep(0.5)
-    client.set_callback(mqtt_callback)
-    for topic in topics.values():
-        client.subscribe(topic)
-
-def check_gprs():    
-    try:
-        if not cellular.gprs():
-            print('GPRS-Status:', cellular.gprs())
-            time.sleep(5)
-            cellular.gprs("pepper", "", "")
-            time.sleep(1)
-            reset_mqtt()
-        else:
-            print("Already connected...")
-            client.check_msg()
-    except Exception as err:
-        machine.reset()
 
 # Hauptprogramm
 if __name__ == "__main__":
@@ -240,7 +246,9 @@ if __name__ == "__main__":
 
     while True:
         for _ in range(TIME_PERIOD):
-            for _ in range(2):
-                check_gprs()
-                time.sleep(1)
+            client.check_msg()
+            print("Bereit zum empfangen")
+            time.sleep(1)
         publish_box_states()
+        time.sleep(1)
+
