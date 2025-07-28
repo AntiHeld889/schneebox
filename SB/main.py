@@ -8,7 +8,7 @@ from umqtt import simple
 import gc
 
 # ====== Konfig / Konstanten ====== #
-version_state = "V2.5.1"
+version_state = "V2.5.2"
 WATCHDOG_TIMEOUT = 90
 GPRS_APN = "pepper"  # APN für cellular.gprs()
 GPRS_USER = ""       # ggf. wenn nötig
@@ -63,7 +63,7 @@ def initialize_system():
     led.value(1)
     machine.watchdog_on(WATCHDOG_TIMEOUT)
     print("Watchdog ON")
-    time.sleep(2)
+    time.sleep(10)
 
     # GPRS-Verbindung
     try:
@@ -83,14 +83,16 @@ def initialize_system():
     time.sleep(1)
     print("Boot end")
     led.value(0)
+    time.sleep(2)
 
 def configure_mqtt_client():
     client = simple.MQTTClient(mqtt_name, mqtt_server, mqtt_port, mqtt_username, mqtt_password)
     client.connect()
+    time.sleep(1)
     client.set_callback(mqtt_callback)
     for topic in topics.values():
         client.subscribe(topic)
-    print("MQTT connected.")
+    print("MQTT connected...")
     return client
 
 def mqtt_callback(topic, msg):
@@ -140,7 +142,7 @@ def update():
     gc.enable()
     time.sleep(0.2)
     publish_data(client, topics["answer"], "Update gestartet...")
-    OTA = senko.Senko(user="AntiHeld889", repo="schneebox", working_dir="SB", files=["main.py"])
+    OTA = senko.Senko(user="AntiHeld889", repo="schneebox", branch="master", working_dir="SB", files=["main.py"])
     
     if OTA.update():
         print("Updated to the latest version! Rebooting...")
@@ -165,6 +167,7 @@ def publish_data(client, topic, data):
         client.publish(topic, msg)
     except Exception as e:
         print('Fehler beim publish_data:', e)
+        time.sleep(5)
         machine.reset()
 
 def box1_start():
@@ -251,4 +254,3 @@ if __name__ == "__main__":
             time.sleep(1)
         publish_box_states()
         time.sleep(1)
-
