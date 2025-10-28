@@ -52,6 +52,7 @@ topics = {
 }
 
 # ====== Globale Variablen ====== #
+client = None
 bat = 0
 counter = 0
 lmop_time = LINEAR_MOTOR_OPERATION_TIME
@@ -86,6 +87,7 @@ def initialize_system():
     time.sleep(2)
 
 def configure_mqtt_client():
+    global client
     client = simple.MQTTClient(mqtt_name, mqtt_server, mqtt_port, mqtt_username, mqtt_password)
     client.connect()
     time.sleep(1)
