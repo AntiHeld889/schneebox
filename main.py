@@ -8,7 +8,7 @@ from umqtt import simple
 import gc
 
 # ====== Konfig / Konstanten ====== #
-version_state = "V2.5.3"
+version_state = "V2.6.0"
 WATCHDOG_TIMEOUT = 90
 GPRS_APN = "pepper"  # APN für cellular.gprs()
 GPRS_USER = ""       # ggf. wenn nötig
