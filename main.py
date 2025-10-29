@@ -149,7 +149,7 @@ def update():
     gc.enable()
     time.sleep(0.2)
     publish_data(client, topics["answer"], "Update gestartet...")
-    OTA = senko.Senko(user="AntiHeld889", repo="schneebox", branch="master", files=["main.py"])
+    OTA = senko.Senko(user="AntiHeld889", repo="schneebox", branch="main", files=["main.py"])
     
     if OTA.update():
         print("Updated to the latest version! Rebooting...")
