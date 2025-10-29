@@ -131,7 +131,7 @@ def mqtt_callback(topic, msg):
     elif topic == topics["lmopt"]:
         try:
             lmop_time = int(msg)
-            print('Neues Blinkintervall erhalten: {} Sekunden'.format(lmop_time))
+            print('Neues Pauseintervall erhalten: {} Sekunden'.format(lmop_time))
         except ValueError:
             print('Ungültige Nachricht: {}'.format(msg))
 
@@ -170,7 +170,7 @@ def publish_data(client, topic, data):
     try:
         machine.watchdog_reset()
         msg = json.dumps(data)
-        print('Received Data:  Topic = {}, Msg = {}'.format(topic, msg))
+        print('Gesendete Daten:  Topic = {}, Msg = {}'.format(topic, msg))
         client.publish(topic, msg)
     except Exception as e:
         print('Fehler beim publish_data:', e)
@@ -189,7 +189,7 @@ def battery():
     for _ in range(10):
         val_sum += adc.read()
         time.sleep(0.1)
-    bat = round(val_sum / 10, 2)
+    bat = round(val_sum / 10, 3)
     print("Battery ADC:", bat)
 
 def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_msg, enda_msg, endb_msg):
