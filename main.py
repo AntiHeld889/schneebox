@@ -9,7 +9,7 @@ import gc
 
 # ====== Konfig / Konstanten ====== #
 version_state = "V2.6.0"
-WATCHDOG_TIMEOUT = 90
+WATCHDOG_TIMEOUT = 100
 GPRS_APN = "pepper"  # APN für cellular.gprs()
 GPRS_USER = ""       # ggf. wenn nötig
 GPRS_PASS = ""       # ggf. wenn nötig
@@ -201,7 +201,7 @@ def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_
     time.sleep(12)
     box_state = Box1.value() == 1 if box_topic == topics["Box1"] else Box2.value() == 1
     publish_data(client, box_topic, not box_state)
-    time.sleep(LINEAR_MOTOR_OPERATION_TIME)
+    time.sleep(lmop_time)
     machine.watchdog_reset()
     publish_data(client, topics["answer"], startb_msg)
     box_state = Box1.value() == 1 if box_topic == topics["Box1"] else Box2.value() == 1
@@ -213,7 +213,7 @@ def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_
     secondary_relais.value(1)
     time.sleep(16)
     machine.watchdog_reset()
-    time.sleep(LINEAR_MOTOR_OPERATION_TIME)
+    time.sleep(lmop_time)
     secondary_relais.value(0)
     publish_data(client, topics["answer"], endb_msg)
 
