@@ -88,14 +88,19 @@ def initialize_system():
 
 def configure_mqtt_client():
     global client
-    client = simple.MQTTClient(mqtt_name, mqtt_server, mqtt_port, mqtt_username, mqtt_password)
-    client.connect()
-    time.sleep(1)
-    client.set_callback(mqtt_callback)
-    for topic in topics.values():
-        client.subscribe(topic)
-    print("MQTT connected...")
-    return client
+    try:
+        client = simple.MQTTClient(mqtt_name, mqtt_server, mqtt_port, mqtt_username, mqtt_password)
+        client.connect()
+        time.sleep(1)
+        client.set_callback(mqtt_callback)
+        for topic in topics.values():
+            client.subscribe(topic)
+        print("MQTT connected...")
+        return client
+    except Exception as e:
+        print("MQTT Verbindung fehlgeschlagen:", e)
+        time.sleep(5)
+        machine.reset()
 
 def mqtt_callback(topic, msg):
     global lmop_time
@@ -128,7 +133,7 @@ def mqtt_callback(topic, msg):
             lmop_time = int(msg)
             print('Neues Blinkintervall erhalten: {} Sekunden'.format(lmop_time))
         except ValueError:
-            print('Ungültige Nachricht: {}'.format(lmop_time))
+            print('Ungültige Nachricht: {}'.format(msg))
 
 
 def reset():
@@ -144,7 +149,7 @@ def update():
     gc.enable()
     time.sleep(0.2)
     publish_data(client, topics["answer"], "Update gestartet...")
-    OTA = senko.Senko(user="AntiHeld889", repo="schneebox", branch="master", working_dir="SB", files=["main.py"])
+    OTA = senko.Senko(user="AntiHeld889", repo="schneebox", branch="master", files=["main.py"])
     
     if OTA.update():
         print("Updated to the latest version! Rebooting...")
@@ -165,7 +170,7 @@ def publish_data(client, topic, data):
     try:
         machine.watchdog_reset()
         msg = json.dumps(data)
-        print('Seceived Data:  Topic = {}, Msg = {}'.format(topic, msg))
+        print('Received Data:  Topic = {}, Msg = {}'.format(topic, msg))
         client.publish(topic, msg)
     except Exception as e:
         print('Fehler beim publish_data:', e)
@@ -188,8 +193,6 @@ def battery():
     print("Battery ADC:", bat)
 
 def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_msg, enda_msg, endb_msg):
-    global B_state
-    B_state = False
     machine.watchdog_reset()
     secondary_relais.value(0)
     publish_data(client, topics["answer"], starta_msg)
@@ -197,12 +200,12 @@ def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_
     primary_relais.value(1)
     time.sleep(12)
     box_state = Box1.value() == 1 if box_topic == topics["Box1"] else Box2.value() == 1
-    publish_data(client, box_topic,not box_state)
+    publish_data(client, box_topic, not box_state)
     time.sleep(LINEAR_MOTOR_OPERATION_TIME)
     machine.watchdog_reset()
     publish_data(client, topics["answer"], startb_msg)
     box_state = Box1.value() == 1 if box_topic == topics["Box1"] else Box2.value() == 1
-    publish_data(client, box_topic,not box_state)
+    publish_data(client, box_topic, not box_state)
     time.sleep(0.2)
     publish_data(client, topics["answer"], enda_msg)
     primary_relais.value(0)
