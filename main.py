@@ -189,7 +189,7 @@ def battery():
     for _ in range(10):
         val_sum += adc.read()
         time.sleep(0.1)
-    bat = val_sum / 10
+    bat = round(val_sum / 10, 2)
     print("Battery ADC:", bat)
 
 def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_msg, enda_msg, endb_msg):
