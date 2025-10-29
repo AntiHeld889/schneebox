@@ -8,8 +8,8 @@ from umqtt import simple
 import gc
 
 # ====== Konfig / Konstanten ====== #
-version_state = "V2.5.2"
-WATCHDOG_TIMEOUT = 90
+version_state = "V2.6.0"
+WATCHDOG_TIMEOUT = 100
 GPRS_APN = "pepper"  # APN für cellular.gprs()
 GPRS_USER = ""       # ggf. wenn nötig
 GPRS_PASS = ""       # ggf. wenn nötig
@@ -52,6 +52,7 @@ topics = {
 }
 
 # ====== Globale Variablen ====== #
+client = None
 bat = 0
 counter = 0
 lmop_time = LINEAR_MOTOR_OPERATION_TIME
@@ -86,14 +87,20 @@ def initialize_system():
     time.sleep(2)
 
 def configure_mqtt_client():
-    client = simple.MQTTClient(mqtt_name, mqtt_server, mqtt_port, mqtt_username, mqtt_password)
-    client.connect()
-    time.sleep(1)
-    client.set_callback(mqtt_callback)
-    for topic in topics.values():
-        client.subscribe(topic)
-    print("MQTT connected...")
-    return client
+    global client
+    try:
+        client = simple.MQTTClient(mqtt_name, mqtt_server, mqtt_port, mqtt_username, mqtt_password)
+        client.connect()
+        time.sleep(1)
+        client.set_callback(mqtt_callback)
+        for topic in topics.values():
+            client.subscribe(topic)
+        print("MQTT connected...")
+        return client
+    except Exception as e:
+        print("MQTT Verbindung fehlgeschlagen:", e)
+        time.sleep(5)
+        machine.reset()
 
 def mqtt_callback(topic, msg):
     global lmop_time
@@ -124,9 +131,9 @@ def mqtt_callback(topic, msg):
     elif topic == topics["lmopt"]:
         try:
             lmop_time = int(msg)
-            print('Neues Blinkintervall erhalten: {} Sekunden'.format(lmop_time))
+            print('Neues Pauseintervall erhalten: {} Sekunden'.format(lmop_time))
         except ValueError:
-            print('Ungültige Nachricht: {}'.format(lmop_time))
+            print('Ungültige Nachricht: {}'.format(msg))
 
 
 def reset():
@@ -142,7 +149,7 @@ def update():
     gc.enable()
     time.sleep(0.2)
     publish_data(client, topics["answer"], "Update gestartet...")
-    OTA = senko.Senko(user="AntiHeld889", repo="schneebox", branch="master", working_dir="SB", files=["main.py"])
+    OTA = senko.Senko(user="AntiHeld889", repo="schneebox", branch="main", files=["main.py"])
     
     if OTA.update():
         print("Updated to the latest version! Rebooting...")
@@ -163,7 +170,7 @@ def publish_data(client, topic, data):
     try:
         machine.watchdog_reset()
         msg = json.dumps(data)
-        print('Seceived Data:  Topic = {}, Msg = {}'.format(topic, msg))
+        print('Gesendete Daten:  Topic = {}, Msg = {}'.format(topic, msg))
         client.publish(topic, msg)
     except Exception as e:
         print('Fehler beim publish_data:', e)
@@ -182,12 +189,10 @@ def battery():
     for _ in range(10):
         val_sum += adc.read()
         time.sleep(0.1)
-    bat = val_sum / 10
+    bat = round(val_sum / 10, 3)
     print("Battery ADC:", bat)
 
 def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_msg, enda_msg, endb_msg):
-    global B_state
-    B_state = False
     machine.watchdog_reset()
     secondary_relais.value(0)
     publish_data(client, topics["answer"], starta_msg)
@@ -195,12 +200,12 @@ def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_
     primary_relais.value(1)
     time.sleep(12)
     box_state = Box1.value() == 1 if box_topic == topics["Box1"] else Box2.value() == 1
-    publish_data(client, box_topic,not box_state)
-    time.sleep(LINEAR_MOTOR_OPERATION_TIME)
+    publish_data(client, box_topic, not box_state)
+    time.sleep(lmop_time)
     machine.watchdog_reset()
     publish_data(client, topics["answer"], startb_msg)
     box_state = Box1.value() == 1 if box_topic == topics["Box1"] else Box2.value() == 1
-    publish_data(client, box_topic,not box_state)
+    publish_data(client, box_topic, not box_state)
     time.sleep(0.2)
     publish_data(client, topics["answer"], enda_msg)
     primary_relais.value(0)
@@ -208,7 +213,7 @@ def control_box(primary_relais, secondary_relais, box_topic, starta_msg, startb_
     secondary_relais.value(1)
     time.sleep(16)
     machine.watchdog_reset()
-    time.sleep(LINEAR_MOTOR_OPERATION_TIME)
+    time.sleep(lmop_time)
     secondary_relais.value(0)
     publish_data(client, topics["answer"], endb_msg)
 
